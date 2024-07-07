@@ -1,4 +1,5 @@
 import os
+import re
 
 #col-12 col-md-6 bg-light p-3
 #search for this
@@ -41,16 +42,91 @@ def StringSearch(file_path, search_string):
 def CompanySearch(file_path: str) -> list:
     """
     Returns info for company
-    """   
+    """
+    entry = list()   
+
+    # Company Name
+    nameline = StringSearch(file_path, '<h4 class="mb-0">')
+    entry.append(CleanGetLines(nameline, file_path))
+
+    # Company/Branch
+    entry.append("Company")
+    # Location
+    # Phone
+    # Email
+    # Website
+    # Date Added
+
 def BranchSearch(file_path: str) -> list:
     """
     Returns info for each branch
     """
+    entry = list()
+    # Company Name
+    
+    # Company/Branch
+    entry.append("branch")
+    # Location
+    # Phone
+    # Email
+    # Website
+    # Date Added
+def BranchesExist(file_path: str) -> bool:
+    """
+    Checks if a company has branches
+    """
+    
+    lines = StringSearch(file_path, "Branch address")
+    if lines == []:
+        return False
+    elif len(lines) == 1:
+        return True
+    else:
+        print("Multiple instances of 'Branch address' for " + file_path)
+
+def GetLines(line_numbers, file_path):
+    """
+    Given a list of line numbers and an HTML file, return the corresponding lines.
+
+    Parameters:
+    line_numbers (list of int): List of line numbers to extract.
+    file_path (str): Path to the HTML file.
+
+    Returns:
+    list of str: List of strings corresponding to the given line numbers.
+    """
+    lines = []
+    with open(file_path, 'r') as file:
+        all_lines = file.readlines()
+        
+        for line_number in line_numbers:
+            # Ensure the line number is within the valid range
+            if 1 <= line_number <= len(all_lines):
+                lines.append(all_lines[line_number - 1].strip())
+            else:
+                lines.append('')  # Optionally handle out-of-range lines
+
+    return lines
+
+def RemoveHtmlTags(html_line):
+    # Use regular expression to remove tags
+    clean_text = re.sub(r'<[^>]*>', '', html_line)
+    return clean_text
+
+def CleanGetLines(line_numbers, file_path):
+    """
+    A combination of GetLines and RemoveHtmlTags
+    """
+    strings = GetLines(line_numbers, file_path)
+    return RemoveHtmlTags(strings[0])
 
 folders = GetFolderNames(os.getcwd() + "\\HTML files")
-folders = [os.getcwd() + "\\HTML files\\" +i + "\\index.html" for i in folders]
-print(folders)
+folders = [os.getcwd() + "\\HTML files\\" + i + "\\index.html" for i in folders]
 
+for file in folders:
+    entry = CompanySearch(file)
+    if BranchesExist(file):
+        entry2 = BranchSearch(file)
 """
 # Example usage:
 file_path = 'example.html'  # Replace with the path to your HTML file
