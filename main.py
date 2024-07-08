@@ -1,8 +1,13 @@
 import os
 import re
+#from bs4 import BeautifulSoup
 
 #col-12 col-md-6 bg-light p-3
 #search for this
+
+#2851
+#2855
+#2874
 
 def GetFolderNames(directory):
     """
@@ -39,19 +44,22 @@ def StringSearch(file_path, search_string):
     
     return matching_lines
 
-def CompanySearch(file_path: str) -> list:
+def CompanySearch(path: str) -> list:
     """
     Returns info for company
     """
     entry = list()   
 
     # Company Name
-    nameline = StringSearch(file_path, '<h4 class="mb-0">')
-    entry.append(CleanGetLines(nameline, file_path))
+    nameline = StringSearch(path, '<h4 class="mb-0">')
+    entry.append(CleanGetLines(nameline, path))
 
     # Company/Branch
     entry.append("Company")
+
     # Location
+    nameline = StringSearch(path, '<div class="col-12 col-sm-6 col-md-5 col-lg-6 mb-3 mb-sm-0">')
+
     # Phone
     # Email
     # Website
