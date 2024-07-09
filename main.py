@@ -1,6 +1,7 @@
 import os
 import re
-#from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
+from datetime import datetime
 
 #col-12 col-md-6 bg-light p-3
 #search for this
@@ -52,18 +53,38 @@ def CompanySearch(path: str) -> list:
 
     # Company Name
     nameline = StringSearch(path, '<h4 class="mb-0">')
-    entry.append(CleanGetLines(nameline, path))
+    entry.append(CleanGetLines(nameline[0], path))
 
     # Company/Branch
     entry.append("Company")
 
     # Location
     nameline = StringSearch(path, '<div class="col-12 col-sm-6 col-md-5 col-lg-6 mb-3 mb-sm-0">')
+    text = FetchWholeTag(file, nameline[0])
+    entry.append(RemoveHtmlTags(text))
 
     # Phone
+    nameline = StringSearch(path, '<a href="tel:')
+    entry.append(CleanGetLines(nameline[0], path))
+    #will yield multiple results for branches
+
     # Email
+    nameline = StringSearch(path, '<div class="col-10 text-truncate">')
+    text = FetchWholeTag(file, nameline[0])
+    entry.append(RemoveHtmlTags(text))
+    
     # Website
+    nameline = StringSearch(path, '<div class="col-10 text-truncate">')
+    text = FetchWholeTag(file, nameline[1])
+    entry.append(RemoveHtmlTags(text))
+    #Same tag exists for email and website
+
     # Date Added
+    current_date = datetime.now().date()
+    current_date_str = current_date.strftime("%Y-%m-%d")
+    entry.append(current_date_str)
+
+    return entry
 
 def BranchSearch(file_path: str) -> list:
     """
@@ -75,10 +96,15 @@ def BranchSearch(file_path: str) -> list:
     # Company/Branch
     entry.append("branch")
     # Location
+
     # Phone
     # Email
     # Website
     # Date Added
+    current_date = datetime.now().date()
+    current_date_str = current_date.strftime("%Y-%m-%d")
+    entry.append(current_date_str)
+
 def BranchesExist(file_path: str) -> bool:
     """
     Checks if a company has branches
@@ -127,6 +153,38 @@ def CleanGetLines(line_numbers, file_path):
     """
     strings = GetLines(line_numbers, file_path)
     return RemoveHtmlTags(strings[0])
+
+def FetchWholeTag(file_path, start_line):
+    # Read the HTML file
+    with open(file_path, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+    
+    # Join the lines to create a full HTML string
+    html_content = ''.join(lines)
+    
+    # Check if the starting line is within the range of the file's lines
+    if start_line < 1 or start_line > len(lines):
+        raise ValueError("start_line is out of the range of the file's lines")
+    
+    # Extract the content from the specified starting line
+    starting_content = ''.join(lines[start_line-1:])
+    
+    # Use BeautifulSoup to parse the HTML and find the first tag from the starting line
+    soup = BeautifulSoup(starting_content, 'html.parser')
+    
+    # Find the first tag
+    first_tag = None
+    for element in soup.find_all():
+        if str(element).startswith('<'):
+            first_tag = element
+            break
+    
+    if first_tag is None:
+        raise ValueError("No tags found starting from the specified line")
+    
+    # Extract and return the text inside the first tag
+    return first_tag.get_text()
+
 
 folders = GetFolderNames(os.getcwd() + "\\HTML files")
 folders = [os.getcwd() + "\\HTML files\\" + i + "\\index.html" for i in folders]
