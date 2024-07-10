@@ -269,3 +269,6 @@ for file in folders:
 df.to_csv(datapath, index=False)
     
 
+# hyphens need to be allowed in town names
+#Turn \n and excess spaces into 1 space
+#Fix added columns  (check entry no items?)
