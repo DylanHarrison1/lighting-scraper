@@ -2,6 +2,9 @@ import os
 import re
 from bs4 import BeautifulSoup
 from datetime import datetime
+import pandas as pd
+
+#Company Name,Company/Branch,Town,Location,Phone,Email,Website,Date Added
 
 #col-12 col-md-6 bg-light p-3
 #search for this
@@ -229,14 +232,34 @@ def FetchWholeTag(file_path, start_line):
     # Extract and return the text inside the first tag
     return first_tag.get_text()
 
+def AppendRows(df, new_rows):
+    """
+    Appends each inner list in new_rows as a new row in the DataFrame.
+    """
+    
+    new_rows_df = pd.DataFrame(new_rows)
+    
+    df = df.append(new_rows_df, ignore_index=True)
+    
+    return df
 
 folders = GetFolderNames(os.getcwd() + "\\HTML files")
 folders = [os.getcwd() + "\\HTML files\\" + i + "\\index.html" for i in folders]
+datapath = os.getcwd() + "\\data.csv"
+df = pd.read_csv(datapath, index_col=None)
 
 for file in folders:
     entry = CompanySearch(file)
+    AppendRows(df, entry)
+
     if BranchesExist(file):
         entry2 = BranchSearch(file)
+        AppendRows(df, entry2)
+
+df.to_csv(datapath, index=False)
+    
+
+    
 """
 # Example usage:
 file_path = 'example.html'  # Replace with the path to your HTML file
