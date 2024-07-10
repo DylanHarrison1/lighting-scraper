@@ -58,6 +58,12 @@ def CompanySearch(path: str) -> list:
     # Company/Branch
     entry.append("Company")
 
+    #Town
+    nameline = StringSearch(path, '<div class="col-12 col-sm-6 col-md-5 col-lg-6 mb-3 mb-sm-0">')
+    text = FetchWholeTag(file, nameline[0])
+    capitalWords = re.findall(r'\b[A-Z]+\b', text)
+    entry.append(capitalWords[0])
+
     # Location
     nameline = StringSearch(path, '<div class="col-12 col-sm-6 col-md-5 col-lg-6 mb-3 mb-sm-0">')
     text = FetchWholeTag(file, nameline[0])
@@ -84,26 +90,64 @@ def CompanySearch(path: str) -> list:
     current_date_str = current_date.strftime("%Y-%m-%d")
     entry.append(current_date_str)
 
+    entry = [entry]
     return entry
 
-def BranchSearch(file_path: str) -> list:
+def BranchSearch(path: str) -> list:
     """
     Returns info for each branch
     """
-    entry = list()
-    # Company Name
-    
-    # Company/Branch
-    entry.append("branch")
-    # Location
+    branchno = len(StringSearch(path, '<a href="#" class="branch-preview">'))
+    entry = [[] for i in range(branchno)]
 
-    # Phone
-    # Email
-    # Website
-    # Date Added
-    current_date = datetime.now().date()
-    current_date_str = current_date.strftime("%Y-%m-%d")
-    entry.append(current_date_str)
+    for i in range(branchno):
+
+    
+        # Company Name
+        nameline = StringSearch(path, '<h4 class="mb-0">')
+        entry.append(CleanGetLines(nameline[0], path))
+        
+        # Company/Branch
+        entry[i].append("Branch")
+
+        # Town 
+        nameline = StringSearch(path, '<a href="#" class="branch-preview">')
+        text = FetchWholeTag(file, nameline[i])
+        entry[i].append(RemoveHtmlTags(text))
+
+        # Location
+        nameline = StringSearch(path, '<div class="col-6">')
+        text = FetchWholeTag(file, nameline[i * 2])
+        entry[i].append(RemoveHtmlTags(text))
+        #Same divider used for Address and Phone
+
+        # Phone
+        nameline = StringSearch(path, '<a href="tel:')
+        if len(nameline) != branchno + 1:
+            entry[i].append("")
+        else:
+            text = FetchWholeTag(file, nameline[i + 1])
+            entry[i].append(RemoveHtmlTags(text))
+            
+
+        # Email
+        nameline = StringSearch(path, '<a href="mailto:')
+        if len(nameline) != branchno + 3:
+            entry[i].append("")
+        else:
+            text = FetchWholeTag(file, nameline[i + 1])
+            entry[i].append(RemoveHtmlTags(text))
+        #3 extra emails, 1 for business and 2 for EDA
+        
+        # Website
+        entry[i].append("") #Assume none
+
+        # Date Added
+        current_date = datetime.now().date()
+        current_date_str = current_date.strftime("%Y-%m-%d")
+        entry[i].append(current_date_str)
+    
+    return entry
 
 def BranchesExist(file_path: str) -> bool:
     """
