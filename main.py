@@ -40,12 +40,14 @@ def StringSearch(file_path, search_string):
         with open(file_path, 'r', encoding='utf-8') as file:
             for line_number, line in enumerate(file, start=1):
                 if search_string in line:
-                    matching_lines.append((line_number, line.strip()))
+                    matching_lines.append(line_number)
     except FileNotFoundError:
         print(f"The file {file_path} was not found.")
     except Exception as e:
         print(f"An error occurred: {e}")
-    
+
+
+    matching_lines = [int(i) for i in matching_lines]
     return matching_lines
 
 def CompanySearch(path: str) -> list:
@@ -84,8 +86,11 @@ def CompanySearch(path: str) -> list:
     
     # Website
     nameline = StringSearch(path, '<div class="col-10 text-truncate">')
-    text = FetchWholeTag(file, nameline[1])
-    entry.append(RemoveHtmlTags(text))
+    if len(nameline) < 2:
+        entry.append("")
+    else:
+        text = FetchWholeTag(file, nameline[1])
+        entry.append(RemoveHtmlTags(text))
     #Same tag exists for email and website
 
     # Date Added
@@ -165,7 +170,7 @@ def BranchesExist(file_path: str) -> bool:
     else:
         print("Multiple instances of 'Branch address' for " + file_path)
 
-def GetLines(line_numbers, file_path):
+def GetLines(line_number, file_path):
     """
     Given a list of line numbers and an HTML file, return the corresponding lines.
 
@@ -180,12 +185,12 @@ def GetLines(line_numbers, file_path):
     with open(file_path, 'r') as file:
         all_lines = file.readlines()
         
-        for line_number in line_numbers:
-            # Ensure the line number is within the valid range
-            if 1 <= line_number <= len(all_lines):
-                lines.append(all_lines[line_number - 1].strip())
-            else:
-                lines.append('')  # Optionally handle out-of-range lines
+        
+        # Ensure the line number is within the valid range
+        if 1 <= line_number <= len(all_lines):
+            lines.append(all_lines[line_number - 1].strip())
+        else:
+            lines.append('')  # Optionally handle out-of-range lines
 
     return lines
 
@@ -245,27 +250,22 @@ def AppendRows(df, new_rows):
 
 folders = GetFolderNames(os.getcwd() + "\\HTML files")
 folders = [os.getcwd() + "\\HTML files\\" + i + "\\index.html" for i in folders]
+
 datapath = os.getcwd() + "\\data.csv"
+
 df = pd.read_csv(datapath, index_col=None)
 
 for file in folders:
+    print(file)
     entry = CompanySearch(file)
-    AppendRows(df, entry)
+    print(entry)
+    df = AppendRows(df, entry)
 
     if BranchesExist(file):
         entry2 = BranchSearch(file)
-        AppendRows(df, entry2)
+        df = AppendRows(df, entry2)
+    #print(df)
 
 df.to_csv(datapath, index=False)
     
 
-    
-"""
-# Example usage:
-file_path = 'example.html'  # Replace with the path to your HTML file
-search_string = 'your_search_string'  # Replace with the string you want to search for
-
-result = StringSearch(file_path, search_string)
-for line_number, line in result:
-    print(f"Line {line_number}: {line}")
-""" 
