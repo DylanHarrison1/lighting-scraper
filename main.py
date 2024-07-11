@@ -58,7 +58,8 @@ def CompanySearch(path: str) -> list:
 
     # Company Name
     nameline = StringSearch(path, '<h4 class="mb-0">')
-    entry.append(CleanGetLines(nameline[0], path))
+    text = FetchWholeTag(file, nameline[0])
+    entry.append(RemoveHtmlTags(text))
 
     # Company/Branch
     entry.append("Company")
@@ -67,16 +68,19 @@ def CompanySearch(path: str) -> list:
     nameline = StringSearch(path, '<div class="col-12 col-sm-6 col-md-5 col-lg-6 mb-3 mb-sm-0">')
     text = FetchWholeTag(file, nameline[0])
     capitalWords = re.findall(r'\b[A-Z-]+\b', text)
-    entry.append(capitalWords[0])
+    text = re.sub(r'^\s+|\s+$', '', capitalWords[0])
+    entry.append(text)
 
     # Location
     nameline = StringSearch(path, '<div class="col-12 col-sm-6 col-md-5 col-lg-6 mb-3 mb-sm-0">')
     text = FetchWholeTag(file, nameline[0])
     entry.append(RemoveHtmlTags(text))
 
+
     # Phone
     nameline = StringSearch(path, '<a href="tel:')
-    entry.append(CleanGetLines(nameline[0], path))
+    text = FetchWholeTag(file, nameline[0])
+    entry.append(RemoveHtmlTags(text))
     #will yield multiple results for branches
 
     # Email
@@ -113,7 +117,9 @@ def BranchSearch(path: str) -> list:
     
         # Company Name
         nameline = StringSearch(path, '<h4 class="mb-0">')
-        entry.append(CleanGetLines(nameline[0], path))
+        text = FetchWholeTag(file, nameline[0])
+        entry[i].append(RemoveHtmlTags(text))
+
         
         # Company/Branch
         entry[i].append("Branch")
@@ -121,6 +127,7 @@ def BranchSearch(path: str) -> list:
         # Town 
         nameline = StringSearch(path, '<a href="#" class="branch-preview">')
         text = FetchWholeTag(file, nameline[i])
+        text = re.sub(r'^\s+|\s+$', '', text)
         entry[i].append(RemoveHtmlTags(text))
 
         # Location
@@ -192,12 +199,12 @@ def GetLines(line_number, file_path):
         else:
             lines.append('')  # Optionally handle out-of-range lines
 
+    for line in lines:
+        line = re.sub(r'\n', '', line)
+        line = re.sub(r'\s+', ' ', line)
+        #regex removing new lines and excess whitespace characters
 
-    text = re.sub(r'\n', '', lines)
-    text = re.sub(r'\s+', ' ', text)
-    #regex removing new lines and excess whitespace characters
-
-    return text
+    return line
 
 def RemoveHtmlTags(html_line):
     # Use regular expression to remove tags
@@ -264,12 +271,11 @@ folders = [os.getcwd() + "\\HTML files\\" + i + "\\index.html" for i in folders]
 
 datapath = os.getcwd() + "\\data.csv"
 
-df = pd.read_csv(datapath, index_col=None)
+df = pd.read_csv(datapath, index_col=0)
 
 for file in folders:
     print(file)
     entry = CompanySearch(file)
-    print(entry)
     df = AppendRows(df, entry)
 
     if BranchesExist(file):
@@ -277,9 +283,8 @@ for file in folders:
         df = AppendRows(df, entry2)
     #print(df)
 
-df.to_csv(datapath, index=False)
+    df.to_csv(datapath)
     
 
-# hyphens need to be allowed in town names
-#Turn \n and excess spaces into 1 space
+
 #Fix added columns  (check entry no items?)
