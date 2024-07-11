@@ -66,7 +66,7 @@ def CompanySearch(path: str) -> list:
     #Town
     nameline = StringSearch(path, '<div class="col-12 col-sm-6 col-md-5 col-lg-6 mb-3 mb-sm-0">')
     text = FetchWholeTag(file, nameline[0])
-    capitalWords = re.findall(r'\b[A-Z]+\b', text)
+    capitalWords = re.findall(r'\b[A-Z-]+\b', text)
     entry.append(capitalWords[0])
 
     # Location
@@ -192,7 +192,12 @@ def GetLines(line_number, file_path):
         else:
             lines.append('')  # Optionally handle out-of-range lines
 
-    return lines
+
+    text = re.sub(r'\n', '', lines)
+    text = re.sub(r'\s+', ' ', text)
+    #regex removing new lines and excess whitespace characters
+
+    return text
 
 def RemoveHtmlTags(html_line):
     # Use regular expression to remove tags
@@ -235,7 +240,13 @@ def FetchWholeTag(file_path, start_line):
         raise ValueError("No tags found starting from the specified line")
     
     # Extract and return the text inside the first tag
-    return first_tag.get_text()
+    text = first_tag.get_text()
+
+    text = re.sub(r'\n', '', text)
+    text = re.sub(r'\s+', ' ', text)
+    #regex removing new lines and excess whitespace characters
+
+    return text
 
 def AppendRows(df, new_rows):
     """
