@@ -67,7 +67,7 @@ def CompanySearch(path: str) -> list:
     #Town
     nameline = StringSearch(path, '<div class="col-12 col-sm-6 col-md-5 col-lg-6 mb-3 mb-sm-0">')
     text = FetchWholeTag(file, nameline[0])
-    capitalWords = re.findall(r'\b[A-Z-]+\b', text)
+    capitalWords = re.findall(r'\b[A-Z-]{2,}\b', text)
     text = re.sub(r'^\s+|\s+$', '', capitalWords[0])
     entry.append(text)
 
@@ -109,58 +109,84 @@ def BranchSearch(path: str) -> list:
     """
     Returns info for each branch
     """
-    branchno = len(StringSearch(path, '<a href="#" class="branch-preview">'))
+    townNum = len(StringSearch(path, '<a href="#" class="branch-preview">'))
     entry = [[] for i in range(branchno)]
 
-    for i in range(branchno):
-
-    
-        # Company Name
-        nameline = StringSearch(path, '<h4 class="mb-0">')
-        text = FetchWholeTag(file, nameline[0])
-        entry[i].append(RemoveHtmlTags(text))
-
-        
-        # Company/Branch
-        entry[i].append("Branch")
-
-        # Town 
+    branchnum = 0
+    bpt = []    #branches per town
+    townstr = []
+    for i in range(townNum):
         nameline = StringSearch(path, '<a href="#" class="branch-preview">')
         text = FetchWholeTag(file, nameline[i])
         text = re.sub(r'^\s+|\s+$', '', text)
-        entry[i].append(RemoveHtmlTags(text))
+        townstr.append(RemoveHtmlTags(text))
 
-        # Location
-        nameline = StringSearch(path, '<div class="col-6">')
-        text = FetchWholeTag(file, nameline[i * 2])
-        entry[i].append(RemoveHtmlTags(text))
-        #Same divider used for Address and Phone
 
-        # Phone
-        nameline = StringSearch(path, '<a href="tel:')
-        if len(nameline) != branchno + 1:
-            entry[i].append("")
+        pattern = r"(.*)\s\((\d+)\)$"
+        match = re.search(pattern, townstr)
+        if match:
+            # Extract the main part of the string and the integer
+            main_string = match.group(1)
+            integer_part = int(match.group(2))
+            townstr = main_string
+            bpt.append(integer_part)
         else:
-            text = FetchWholeTag(file, nameline[i + 1])
-            entry[i].append(RemoveHtmlTags(text))
+            bpt.append(1)
             
 
-        # Email
-        nameline = StringSearch(path, '<a href="mailto:')
-        if len(nameline) != branchno + 3:
-            entry[i].append("")
-        else:
-            text = FetchWholeTag(file, nameline[i + 1])
+    for i in range(townNum):
+        for j in range(bpt[i]):
+    
+            # Company Name safe
+            nameline = StringSearch(path, '<h4 class="mb-0">')
+            text = FetchWholeTag(file, nameline[0])
             entry[i].append(RemoveHtmlTags(text))
-        #3 extra emails, 1 for business and 2 for EDA
-        
-        # Website
-        entry[i].append("") #Assume none
 
-        # Date Added
-        current_date = datetime.now().date()
-        current_date_str = current_date.strftime("%Y-%m-%d")
-        entry[i].append(current_date_str)
+            
+            # Company/Branch safe
+            entry[i].append("Branch")
+
+            # Town safe
+            entry[i].append(townstr[i])
+            
+            #x is our new "html index"
+            x = 0
+            for k in range(i):
+                x += k #add all previous branches
+            x += j # Find current place
+
+            #Address safeish
+            nameline = StringSearch(path, '<div class="col-6">')
+            
+            text = FetchWholeTag(file, nameline[x * 2])
+            entry[i].append(RemoveHtmlTags(text))
+            #Same divider used for Address and Phone
+
+            # Phone safeish
+            nameline = StringSearch(path, '<a href="tel:')
+            if len(nameline) != sum(bpt) + 1:
+                entry[i].append("")
+            else:
+                text = FetchWholeTag(file, nameline[x + 1])
+                entry[i].append(RemoveHtmlTags(text))
+                
+
+            # Email safeish
+            nameline = StringSearch(path, '<a href="mailto:')
+            if len(nameline) != sum(bpt) + 3:
+                entry[i].append("")
+            else:
+                text = FetchWholeTag(file, nameline[x + 1])
+                entry[i].append(RemoveHtmlTags(text))
+            #3 extra emails, 1 for business and 2 for EDA
+            
+            # Website safe
+            entry[i].append("") #Assume none
+
+            # Date Added safe
+            current_date = datetime.now().date()
+            current_date_str = current_date.strftime("%Y-%m-%d")
+            entry[i].append(current_date_str)
     
     return entry
 
