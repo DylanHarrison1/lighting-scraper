@@ -122,75 +122,76 @@ def BranchSearch(path: str) -> list:
         townstr.append(RemoveHtmlTags(text))
 
 
-        
-        match = re.search(r"(.*)\s\((\d+)\)$", townstr[i]) #????
+        #check if there is more than 1 branch for this town
+        match = re.search(r"(.*)\s\((\d+)\)$", townstr[i])
         if match:
             # Extract the main part of the string and the integer
             main_string = match.group(1)
             integer_part = int(match.group(2))
-            townstr = main_string
+            townstr.append(main_string)
             bpt.append(integer_part)
         else:
             bpt.append(1)
-            
-    entry = []
+    retList = []
 
     for i in range(townNum):
         for j in range(bpt[i]):
-            entry.append([])
+            entry = []
     
             # Company Name safe
             nameline = StringSearch(path, '<h4 class="mb-0">')
             text = FetchWholeTag(file, nameline[0])
-            entry[i].append(RemoveHtmlTags(text))
+            entry.append(RemoveHtmlTags(text))
 
             
             # Company/Branch safe
-            entry[i].append("Branch")
+            entry.append("Branch")
 
             # Town safe
-            entry[i].append(townstr[i])
+            entry.append(townstr[i])
             
             #x is our new "html index"
             x = 0
             for k in range(i):
-                x += k #add all previous branches
+                x += bpt[k] #add all previous branches
             x += j # Find current place
 
             #Address safeish
             nameline = StringSearch(path, '<div class="col-6">')
             
             text = FetchWholeTag(file, nameline[x * 2])
-            entry[i].append(RemoveHtmlTags(text))
+            entry.append(RemoveHtmlTags(text))
             #Same divider used for Address and Phone
 
             # Phone safeish
             nameline = StringSearch(path, '<a href="tel:')
             if len(nameline) != sum(bpt) + 1:
-                entry[i].append("")
+                entry.append("")
             else:
                 text = FetchWholeTag(file, nameline[x + 1])
-                entry[i].append(RemoveHtmlTags(text))
+                entry.append(RemoveHtmlTags(text))
                 
 
             # Email safeish
             nameline = StringSearch(path, '<a href="mailto:')
             if len(nameline) != sum(bpt) + 3:
-                entry[i].append("")
+                entry.append("")
             else:
                 text = FetchWholeTag(file, nameline[x + 1])
-                entry[i].append(RemoveHtmlTags(text))
+                entry.append(RemoveHtmlTags(text))
             #3 extra emails, 1 for business and 2 for EDA
             
             # Website safe
-            entry[i].append("") #Assume none
+            entry.append("") #Assume none
 
             # Date Added safe
             current_date = datetime.now().date()
             current_date_str = current_date.strftime("%Y-%m-%d")
-            entry[i].append(current_date_str)
+            entry.append(current_date_str)
+
+            retList.append(entry)
     
-    return entry
+    return retList
 
 def BranchesExist(file_path: str) -> bool:
     """
