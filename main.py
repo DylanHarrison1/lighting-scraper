@@ -110,7 +110,7 @@ def BranchSearch(path: str) -> list:
     Returns info for each branch
     """
     townNum = len(StringSearch(path, '<a href="#" class="branch-preview">'))
-    entry = [[] for i in range(branchno)]
+    
 
     branchnum = 0
     bpt = []    #branches per town
@@ -122,8 +122,8 @@ def BranchSearch(path: str) -> list:
         townstr.append(RemoveHtmlTags(text))
 
 
-        pattern = r"(.*)\s\((\d+)\)$"
-        match = re.search(pattern, townstr)
+        
+        match = re.search(r"(.*)\s\((\d+)\)$", townstr[i]) #????
         if match:
             # Extract the main part of the string and the integer
             main_string = match.group(1)
@@ -133,9 +133,11 @@ def BranchSearch(path: str) -> list:
         else:
             bpt.append(1)
             
+    entry = []
 
     for i in range(townNum):
         for j in range(bpt[i]):
+            entry.append([])
     
             # Company Name safe
             nameline = StringSearch(path, '<h4 class="mb-0">')
