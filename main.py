@@ -115,15 +115,17 @@ def BranchSearch(path: str) -> list:
     branchnum = 0
     bpt = []    #branches per town
     townstr = []
+    foundStrs = []
+    mainNameLine = StringSearch(path, '<a href="#" class="branch-preview">')
+
     for i in range(townNum):
-        nameline = StringSearch(path, '<a href="#" class="branch-preview">')
-        text = FetchWholeTag(file, nameline[i])
+        text = FetchWholeTag(file, mainNameLine[i])
         text = re.sub(r'^\s+|\s+$', '', text)
-        townstr.append(RemoveHtmlTags(text))
+        foundStrs.append(text)
 
 
         #check if there is more than 1 branch for this town
-        match = re.search(r"(.*)\s\((\d+)\)$", townstr[i])
+        match = re.search(r"(.*)\s\((\d+)\)$", foundStrs[i])
         if match:
             # Extract the main part of the string and the integer
             main_string = match.group(1)
@@ -131,7 +133,9 @@ def BranchSearch(path: str) -> list:
             townstr.append(main_string)
             bpt.append(integer_part)
         else:
+            townstr.append(foundStrs[i])
             bpt.append(1)
+
     retList = []
 
     for i in range(townNum):
@@ -156,7 +160,7 @@ def BranchSearch(path: str) -> list:
                 x += bpt[k] #add all previous branches
             x += j # Find current place
 
-            #Address safeish
+            #Address safe
             nameline = StringSearch(path, '<div class="col-6">')
             
             text = FetchWholeTag(file, nameline[x * 2])
@@ -164,21 +168,46 @@ def BranchSearch(path: str) -> list:
             #Same divider used for Address and Phone
 
             # Phone safeish
+            """
             nameline = StringSearch(path, '<a href="tel:')
             if len(nameline) != sum(bpt) + 1:
                 entry.append("")
             else:
                 text = FetchWholeTag(file, nameline[x + 1])
                 entry.append(RemoveHtmlTags(text))
+            """
+
+            nameline = StringSearch(path, '<a href="tel:')
+            curline = None
+
+            for line in nameline:
+                if (mainNameLine[i+j] < line and line < mainNameLine[i+j+1]) or (mainNameLine[i+j] < line and len(mainNameLine == i+j+1)):
+                    curline = line
+                    break
                 
+            if curline != None:
+                text = FetchWholeTag(file, curline)
+                entry.append(RemoveHtmlTags(text))
+            else:
+                entry.append("")    
+
+
+
 
             # Email safeish
             nameline = StringSearch(path, '<a href="mailto:')
-            if len(nameline) != sum(bpt) + 3:
-                entry.append("")
-            else:
-                text = FetchWholeTag(file, nameline[x + 1])
+            curline = None
+
+            for line in nameline:
+                if (mainNameLine[i+j] < line and line < mainNameLine[i+j+1]) or (mainNameLine[i+j] < line and len(mainNameLine == i+j+1)):
+                    curline = line
+                    break
+                
+            if curline != None:
+                text = FetchWholeTag(file, curline)
                 entry.append(RemoveHtmlTags(text))
+            else:
+                entry.append("")    
             #3 extra emails, 1 for business and 2 for EDA
             
             # Website safe
