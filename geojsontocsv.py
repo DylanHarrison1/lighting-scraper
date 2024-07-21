@@ -34,4 +34,54 @@ def Alphabetise(filename):
     
     # Write the sorted DataFrame to a new CSV file
     df_sorted.to_csv(filename, index=False)
+
+def append_matching_rows(file1, file2, output_file):
+    # Read the CSV files into DataFrames
+    df1 = pd.read_csv(file1)
+    df2 = pd.read_csv(file2)
+    
+    # Ensure the second CSV file is sorted for binary search
+    df2 = df2.sort_values(by=df2.columns[0])
+    
+    # Convert the column of df2 that we will search into a numpy array
+    search_array = df2[df2.columns[0]].to_numpy()
+    
+    # Function to perform binary search
+    def binary_search(array, target):
+        left, right = 0, len(array) - 1
+        while left <= right:
+            mid = (left + right) // 2
+            if array[mid] == target:
+                return mid
+            elif array[mid] < target:
+                left = mid + 1
+            else:
+                right = mid - 1
+        return -1
+    
+    # List to hold the results
+    results = []
+
+    # Iterate through the values in the 3rd column of df1
+    for index, row in df1.iterrows():
+        target_value = row[df1.columns[2]]
+        search_index = binary_search(search_array, target_value)
+        
+        if search_index != -1:
+            # If a match is found, append the matching row from df2 to the current row of df1
+            matched_row = df2.iloc[search_index].to_list()
+            combined_row = row.tolist() + matched_row
+            results.append(combined_row)
+        else:
+            # If no match is found, just append the current row of df1
+            combined_row = row.tolist() + [np.nan] * len(df2.columns)
+            results.append(combined_row)
+    
+    # Create a DataFrame from the results
+    combined_columns = list(df1.columns) + list(df2.columns)
+    combined_df = pd.DataFrame(results, columns=combined_columns)
+    
+    # Write the combined DataFrame to a new CSV file
+    combined_df.to_csv(output_file, index=False)
+
 Alphabetise("\\towns.csv")
