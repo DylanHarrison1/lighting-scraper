@@ -12,7 +12,7 @@ import pandas as pd
 #2851
 #2855
 #2874
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def GetFolderNames(directory):
     """
     Returns a list of folder names in the given directory.
@@ -29,7 +29,7 @@ def GetFolderNames(directory):
     except Exception as e:
         print(f"An error occurred: {e}")
         return []
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def StringSearch(file_path, search_string):
     """
     Takes a file path and the string to be searched, and returns lines it is present in.
@@ -49,8 +49,8 @@ def StringSearch(file_path, search_string):
 
     matching_lines = [int(i) for i in matching_lines]
     return matching_lines
-
-def CompanySearch(path: str) -> list:
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def CompanySearch(path: str) -> tuple[list, bool]:
     """
     Returns info for company
     """
@@ -86,15 +86,24 @@ def CompanySearch(path: str) -> list:
     # Email
     nameline = StringSearch(path, '<div class="col-10 text-truncate">')
     text = FetchWholeTag(file, nameline[0])
-    entry.append(RemoveHtmlTags(text))
+    if re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', text) is not None:
+        entry.append(RemoveHtmlTags(text))
+        mailCheck = True
+    else:
+        entry.append("")
+        mailCheck = False
+
     
     # Website
     nameline = StringSearch(path, '<div class="col-10 text-truncate">')
     if len(nameline) < 2:
-        entry.append("")
+        if mailCheck == True:
+            text = ""
+        else:
+            text = FetchWholeTag(file, nameline[0])
     else:
         text = FetchWholeTag(file, nameline[1])
-        entry.append(RemoveHtmlTags(text))
+    entry.append(RemoveHtmlTags(text))
     #Same tag exists for email and website
 
     # Date Added
@@ -103,9 +112,9 @@ def CompanySearch(path: str) -> list:
     entry.append(current_date_str)
 
     entry = [entry]
-    return entry
-
-def BranchSearch(path: str) -> list:
+    return entry, mailCheck
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def BranchSearch(path: str, mailCheck: bool) -> list:
     """
     Returns info for each branch
     """
@@ -113,6 +122,9 @@ def BranchSearch(path: str) -> list:
     
 
     branchnum = 0
+    emailAdjuster = 0
+    phoneAdjuster = 0
+
     bpt = []    #branches per town
     townstr = []
     foundStrs = []
@@ -178,12 +190,17 @@ def BranchSearch(path: str) -> list:
             """
 
             nameline = StringSearch(path, '<a href="tel:')
-            curline = None
+            nameline.pop(0)
 
-            for line in nameline:
-                if (mainNameLine[i+j] < line and line < mainNameLine[i+j+1]) or (mainNameLine[i+j] < line and len(mainNameLine == i+j+1)):
-                    curline = line
-                    break
+            curline = None
+            lowerBound = mainNameLine[i]
+            upperBound = 1000000 if len(mainNameLine) == i+1 else mainNameLine[i+1]
+            filtered = [line for line in nameline if lowerBound <= line <= upperBound]
+            if len(filtered) == bpt[i]:
+                curline = nameline[i+j + phoneAdjuster]
+            else:
+                phoneAdjuster -= 1
+
                 
             if curline != None:
                 text = FetchWholeTag(file, curline)
@@ -196,19 +213,27 @@ def BranchSearch(path: str) -> list:
 
             # Email safeish
             nameline = StringSearch(path, '<a href="mailto:')
-            curline = None
+            if mailCheck:
+                nameline.pop(0)
+            nameline.pop(-1)
+            nameline.pop(-1)#3 extra emails, 1 for business and 2 for EDA
+            
 
-            for line in nameline:
-                if (mainNameLine[i+j] < line and line < mainNameLine[i+j+1]) or (mainNameLine[i+j] < line and len(mainNameLine == i+j+1)):
-                    curline = line
-                    break
+            curline = None
+            lowerBound = mainNameLine[i]
+            upperBound = 1000000 if len(mainNameLine) == i+1 else mainNameLine[i+1]
+            filtered = [line for line in nameline if lowerBound <= line <= upperBound]
+            if len(filtered) == bpt[i]:
+                curline = nameline[i+j +emailAdjuster]
+            else:
+                emailAdjuster -= 1
                 
             if curline != None:
                 text = FetchWholeTag(file, curline)
                 entry.append(RemoveHtmlTags(text))
             else:
                 entry.append("")    
-            #3 extra emails, 1 for business and 2 for EDA
+            
             
             # Website safe
             entry.append("") #Assume none
@@ -221,7 +246,7 @@ def BranchSearch(path: str) -> list:
             retList.append(entry)
     
     return retList
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def BranchesExist(file_path: str) -> bool:
     """
     Checks if a company has branches
@@ -234,7 +259,7 @@ def BranchesExist(file_path: str) -> bool:
         return True
     else:
         print("Multiple instances of 'Branch address' for " + file_path)
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def GetLines(line_number, file_path):
     """
     Given a list of line numbers and an HTML file, return the corresponding lines.
@@ -263,19 +288,19 @@ def GetLines(line_number, file_path):
         #regex removing new lines and excess whitespace characters
 
     return line
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def RemoveHtmlTags(html_line):
     # Use regular expression to remove tags
     clean_text = re.sub(r'<[^>]*>', '', html_line)
     return clean_text
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def CleanGetLines(line_numbers, file_path):
     """
     A combination of GetLines and RemoveHtmlTags
     """
     strings = GetLines(line_numbers, file_path)
     return RemoveHtmlTags(strings[0])
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def FetchWholeTag(file_path, start_line):
     # Read the HTML file
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -312,36 +337,37 @@ def FetchWholeTag(file_path, start_line):
     #regex removing new lines and excess whitespace characters
 
     return text
-
-def AppendRows(df, new_rows):
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def AppendRows(df, new_rows, cols):
     """
     Appends each inner list in new_rows as a new row in the DataFrame.
     """
     
-    new_rows_df = pd.DataFrame(new_rows)
+    new_rows_df = pd.DataFrame(new_rows,columns=cols)
     
     df = df.append(new_rows_df, ignore_index=True)
     
     return df
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 folders = GetFolderNames(os.getcwd() + "\\HTML files")
+#folders = [i for i in folders if int(i) >= 3100]
 folders = [os.getcwd() + "\\HTML files\\" + i + "\\index.html" for i in folders]
 
 datapath = os.getcwd() + "\\data.csv"
 
-df = pd.read_csv(datapath, index_col=0)
+df = pd.read_csv(datapath, index_col=False)
 
 for file in folders:
     print(file)
-    entry = CompanySearch(file)
-    df = AppendRows(df, entry)
+    entry, mailCheck = CompanySearch(file)
+    df = AppendRows(df, entry, df.columns)
 
     if BranchesExist(file):
-        entry2 = BranchSearch(file)
-        df = AppendRows(df, entry2)
+        entry2 = BranchSearch(file, mailCheck)
+        df = AppendRows(df, entry2, df.columns)
     #print(df)
 
-    df.to_csv(datapath)
+    df.to_csv(datapath, index=False)
     
 
 
