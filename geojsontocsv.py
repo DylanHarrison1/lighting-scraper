@@ -2,10 +2,11 @@ import json
 import csv
 import pandas as pd
 import os
+import numpy as np
 
 def ConvertData():
     # Load the GeoJSON data
-    with open('export.geojson', 'r', encoding='utf-8') as f:
+    with open('export(1).geojson', 'r', encoding='utf-8') as f:
         data = json.load(f)
 
     # Prepare CSV file
@@ -40,20 +41,19 @@ def append_matching_rows(file1, file2, output_file):
     df1 = pd.read_csv(file1)
     df2 = pd.read_csv(file2)
     
-    # Ensure the second CSV file is sorted for binary search
-    df2 = df2.sort_values(by=df2.columns[0])
     
     # Convert the column of df2 that we will search into a numpy array
-    search_array = df2[df2.columns[0]].to_numpy()
+    search_array = list(df2[df2.columns[0]])
     
     # Function to perform binary search
     def binary_search(array, target):
+        target = target.lower()
         left, right = 0, len(array) - 1
         while left <= right:
             mid = (left + right) // 2
-            if array[mid] == target:
+            if array[mid].lower() == target:
                 return mid
-            elif array[mid] < target:
+            elif array[mid].lower() < target:
                 left = mid + 1
             else:
                 right = mid - 1
@@ -85,3 +85,5 @@ def append_matching_rows(file1, file2, output_file):
     combined_df.to_csv(output_file, index=False)
 
 Alphabetise("\\towns.csv")
+
+append_matching_rows(os.getcwd() + "\\data.csv", os.getcwd() + "\\towns.csv", os.getcwd() + "\\compiled.csv")
