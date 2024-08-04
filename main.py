@@ -74,6 +74,7 @@ def CompanySearch(path: str) -> tuple[list, bool]:
     # Location
     nameline = StringSearch(path, '<div class="col-12 col-sm-6 col-md-5 col-lg-6 mb-3 mb-sm-0">')
     text = FetchWholeTag(file, nameline[0])
+    text = re.sub(r'^[\s"]+|[\s"]+$', '', text) #Remove spaces / ""
     entry.append(RemoveHtmlTags(text))
 
 
@@ -176,6 +177,7 @@ def BranchSearch(path: str, mailCheck: bool) -> list:
             nameline = StringSearch(path, '<div class="col-6">')
             
             text = FetchWholeTag(file, nameline[x * 2])
+            text = re.sub(r'^[\s"]+|[\s"]+$', '', text) #Remove spaces / ""
             entry.append(RemoveHtmlTags(text))
             #Same divider used for Address and Phone
 
