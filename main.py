@@ -173,7 +173,7 @@ def BranchSearch(path: str, mailCheck: bool) -> list:
                 x += bpt[k] #add all previous branches
             x += j # Find current place
 
-            #Address safe
+            #Address safish
             nameline = StringSearch(path, '<div class="col-6">')
             
             text = FetchWholeTag(file, nameline[x * 2])
