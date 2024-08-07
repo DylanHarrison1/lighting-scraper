@@ -199,9 +199,10 @@ def BranchSearch(path: str, mailCheck: bool) -> list:
             upperBound = 1000000 if len(mainNameLine) == i+1 else mainNameLine[i+1]
             filtered = [line for line in nameline if lowerBound <= line <= upperBound]
             if len(filtered) == bpt[i]:
-                curline = nameline[i+j + phoneAdjuster]
+                #curline = nameline[i+j + phoneAdjuster]
+                curline = filtered[j]
             else:
-                phoneAdjuster -= 1
+                phoneAdjuster -= bpt[i]
 
                 
             if curline != None:
@@ -226,9 +227,10 @@ def BranchSearch(path: str, mailCheck: bool) -> list:
             upperBound = 1000000 if len(mainNameLine) == i+1 else mainNameLine[i+1]
             filtered = [line for line in nameline if lowerBound <= line <= upperBound]
             if len(filtered) == bpt[i]:
-                curline = nameline[i+j +emailAdjuster]
+                #curline = nameline[i+j +emailAdjuster]
+                curline = filtered[j]
             else:
-                emailAdjuster -= 1
+                emailAdjuster -= bpt[i]
                 
             if curline != None:
                 text = FetchWholeTag(file, curline)
@@ -236,7 +238,12 @@ def BranchSearch(path: str, mailCheck: bool) -> list:
             else:
                 entry.append("")    
             
-            
+            """
+            For towns with more than 1 branch, the first email/ number is copied correctly, 
+            but the rest are duplicated once, pushing everything down.
+            """
+
+
             # Website safe
             entry.append("") #Assume none
 
@@ -352,10 +359,10 @@ def AppendRows(df, new_rows, cols):
     return df
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 folders = GetFolderNames(os.getcwd() + "\\HTML files")
-#folders = [i for i in folders if int(i) >= 3100]
+#folders = [i for i in folders if int(i) >= 2930]
 folders = [os.getcwd() + "\\HTML files\\" + i + "\\index.html" for i in folders]
 
-datapath = os.getcwd() + "\\data.csv"
+datapath = os.getcwd() + "\\pre-data.csv"
 
 df = pd.read_csv(datapath, index_col=False)
 

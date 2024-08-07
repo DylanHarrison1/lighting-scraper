@@ -84,6 +84,6 @@ def append_matching_rows(file1, file2, output_file):
     # Write the combined DataFrame to a new CSV file
     combined_df.to_csv(output_file, index=False)
 
-Alphabetise("\\towns.csv")
+#Alphabetise("\\towns.csv")
 
-append_matching_rows(os.getcwd() + "\\data.csv", os.getcwd() + "\\towns.csv", os.getcwd() + "\\compiled.csv")
+append_matching_rows(os.getcwd() + "\\pre-data.csv", os.getcwd() + "\\towns.csv", os.getcwd() + "\\compiled.csv")
